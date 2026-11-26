@@ -2,6 +2,20 @@
 
 用于管理组织成员、月度环评、评分校准、结果发布和反馈复核。部署时使用自己的数据库和飞书应用。
 
+## 产品截图
+
+### 个人工作台
+
+![个人工作台](docs/screenshots/personal-dashboard.png)
+
+### 月度自评
+
+![月度自评](docs/screenshots/self-review.png)
+
+### 月评周期管理
+
+![月评周期管理](docs/screenshots/cycle-management.png)
+
 ## 本地启动
 
 需要 Docker Compose。在本目录复制 `.env.example` 为 `.env`，设置 `DOCKER_SESSION_SECRET` 和 `INITIAL_SETUP_TOKEN`。分别生成两个独立的随机值，每个至少 32 个字符。已安装 Node.js 时，每次运行以下命令可生成一个：
