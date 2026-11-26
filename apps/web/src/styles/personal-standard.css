@@ -1,0 +1,72 @@
+/* Shared visual scale for personal business pages only. Dashboard and admin pages opt out. */
+@media screen {
+.personal-standard {
+  --personal-title: 28px;
+  --personal-section: 18px;
+  --personal-body: 14px;
+  --personal-control: 40px;
+  --personal-radius: 12px;
+  --personal-card-padding: 20px;
+  --personal-card-height: 140px;
+  color: #172b4d;
+  font-size: var(--personal-body);
+}
+.personal-standard :is(.monthly-heading,.self-heading,.page-head,.report-heading) { min-height: 80px; align-items: center; gap: 20px; }
+.personal-standard :is(.monthly-heading,.self-heading,.page-head,.report-heading) h1,
+.personal-standard.evaluation-page header h1,
+.personal-standard > h1.page-title {
+  margin: 0 0 8px; font-size: var(--personal-title); line-height: 40px; font-weight: 700; letter-spacing: -.02em; color: #172b4d;
+}
+.personal-standard :is(.monthly-heading,.self-heading,.page-head,.report-heading) p,
+.personal-standard.evaluation-page header p:not(.blue),
+.personal-standard > .page-sub { font-size: var(--personal-body); line-height: 24px; color: #667085; margin: 0; }
+.personal-standard > .page-sub { margin-bottom: 20px; }
+.personal-standard :is(.page-head,.report-heading) { margin-bottom: 20px; }
+.personal-standard :is(.summary-card,.overview-card),
+.personal-standard.tasks-workspace .metric-card,
+.personal-standard.organization-workspace > .grid > .card {
+  box-sizing: border-box; min-height: var(--personal-card-height); padding: var(--personal-card-padding); border-radius: var(--personal-radius); border-color: #e5eaf2; box-shadow: 0 3px 12px #172b4d05;
+}
+.personal-standard :is(.summary-card,.overview-card) { align-items: center; gap: 14px; }
+.personal-standard.tasks-workspace .metric-card,
+.personal-standard.organization-workspace > .grid > .card { display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.personal-standard :is(.summary-card,.overview-card) h2,
+.personal-standard.tasks-workspace .metric-card > span,
+.personal-standard.organization-workspace > .grid > .card > .tag { font-size: 13px; line-height: 20px; color: #667085; font-weight: 400; }
+.personal-standard :is(.summary-card,.overview-card) strong,
+.personal-standard.tasks-workspace .metric-card strong,
+.personal-standard.organization-workspace .kpi { font-family: inherit; font-size: 24px; line-height: 32px; font-weight: 650; font-variant-numeric: tabular-nums; color: #172b4d; }
+.personal-standard .overview-card.explanation-card strong { font-size: 18px; line-height: 28px; }
+.personal-standard :is(.summary-card,.overview-card) p,
+.personal-standard.tasks-workspace .metric-card small { font-size: 13px; line-height: 20px; color: #667085; }
+.personal-standard :is(.summary-card .material-icon,.overview-card .self-icon) { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 12px; }
+.personal-standard :is(.material-panel,.self-panel,.report-panel,.panel,.card) { border-radius: var(--personal-radius); }
+.personal-standard :is(.panel-heading,.section-heading,.list-head,.report-panel,.panel) h2,
+.personal-standard .dept-card h3,
+.personal-standard.feedback-workspace .card > h3 { font-size: var(--personal-section); line-height: 26px; font-weight: 600; }
+.personal-standard :is(.btn,.material-button,.self-button) { min-height: var(--personal-control); padding: 9px 14px; font-family: inherit; font-size: var(--personal-body); line-height: 20px; border-radius: 7px; }
+.personal-standard .report-controls .export-button { align-self: center; height: var(--personal-control); }
+.personal-standard :is(.text-button,.link) { font-family: inherit; font-size: 13px; }
+.personal-standard :is(.cycle-picker,.period-picker) select,
+.personal-standard :is(.pending-card,.field) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select),
+.personal-standard .history-select,
+.personal-standard.feedback-workspace .input {
+  box-sizing: border-box; height: var(--personal-control); min-height: var(--personal-control); padding: 9px 12px; border-radius: 7px; font-family: inherit; font-size: var(--personal-body); line-height: 20px;
+}
+.personal-standard :is(.cycle-picker,.period-picker) { width: 280px; max-width: 100%; flex-basis: 280px; }
+.personal-standard .period-picker select { border-color: #dce3ed; }
+.personal-standard textarea { font-family: inherit; font-size: var(--personal-body); line-height: 22px; border-radius: 7px; }
+.personal-standard.organization-workspace .org-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); }
+@media(max-width:1100px) {
+  .personal-standard { --personal-card-padding: 18px; }
+  .personal-standard :is(.summary-card,.overview-card) { gap: 10px; }
+}
+@media(max-width:700px) {
+  .personal-standard { --personal-title: 25px; --personal-card-padding: 16px; --personal-card-height: 128px; }
+  .personal-standard :is(.monthly-heading,.self-heading,.page-head,.report-heading) { align-items: flex-start; min-height: auto; }
+  .personal-standard :is(.cycle-picker,.period-picker) { flex-basis: auto; width: 100%; }
+  .personal-standard :is(.monthly-heading,.self-heading,.page-head,.report-heading) h1,
+  .personal-standard.evaluation-page header h1,
+  .personal-standard > h1.page-title { line-height: 36px; }
+}
+}

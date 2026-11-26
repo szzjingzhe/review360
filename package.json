@@ -1,0 +1,35 @@
+{
+  "name": "team-360-growth-review",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.6.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:api": "pnpm --filter @360/api dev",
+    "dev:web": "pnpm --filter @360/web dev",
+    "dev:worker": "pnpm --filter @360/worker dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:isolated": "node scripts/test-isolated.cjs",
+    "test:api": "pnpm --filter @360/api test",
+    "test:worker": "pnpm --filter @360/worker test",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @360/database migrate",
+    "db:seed": "pnpm --filter @360/database seed",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "docker:logs": "docker compose logs -f --tail=100",
+    "docker:ps": "docker compose ps",
+    "docker:check": "docker compose config --quiet"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

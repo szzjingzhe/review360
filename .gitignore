@@ -1,0 +1,46 @@
+node_modules/
+dist/
+coverage/
+*.log
+*.tgz
+.DS_Store
+Thumbs.db
+
+# WorkBuddy 本机工作记录
+.workbuddy/
+
+# 环境变量：只提交 .env.example，真实环境文件绝不入库
+.env
+.env.*
+!.env.example
+deploy/cloud.env
+
+# 本地临时数据
+/tmp/
+.local/
+.pnpm-store/
+
+# 本机便携 PostgreSQL 工具与脚本
+pg-tools/
+start.out
+start.err
+
+# SWC 缓存
+apps/api/.swc/
+
+# 本地一次性脚本
+scripts/_smoke.js
+review360-tunnel.ps1
+
+# pnpm 异常中断时残留的临时 lockfile（应被 git 忽略）
+pnpm-lock.yaml.[0-9]*
+
+# Runtime exports, database dumps, and credential files.
+storage/
+*.tar
+*.tar.gz
+*.zip
+*.dump
+*.bak
+*.pem
+*.pfx

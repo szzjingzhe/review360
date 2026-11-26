@@ -1,0 +1,33 @@
+<script setup lang="ts">
+import {computed,nextTick,onMounted,ref} from 'vue';
+import {realApi} from '../api/real';
+const bindings=ref<Record<string,any>[]>([]),loading=ref(false),busy=ref(''),error=ref(''),message=ref(''),confirmRevoke=ref('');
+const keyword=ref(''),statusFilter=ref('all');
+const accountLabels:Record<string,string>={ACTIVE:'账号正常',SUSPENDED:'账号已暂停',DISABLED:'账号已停用'};
+const filtered=computed(()=>bindings.value.filter(binding=>{
+ const text=keyword.value.trim().toLocaleLowerCase();
+ return (!text||[binding.display_name,binding.external_id,binding.tenant_key].some(v=>String(v??'').toLocaleLowerCase().includes(text)))
+  &&(statusFilter.value==='all'||(statusFilter.value==='approved'?binding.approved:!binding.approved));
+}));
+async function load(){loading.value=true;error.value='';try{bindings.value=await realApi.listFeishuBindings();}catch{error.value='绑定信息读取失败，请重试。';}finally{loading.value=false;}}
+async function requestRevoke(id:string){confirmRevoke.value=id;message.value='';await nextTick();document.getElementById('confirm-revoke-'+id)?.focus();}
+async function revoke(id:string){if(busy.value||confirmRevoke.value!==id)return;busy.value=id;error.value='';message.value='';try{await realApi.revokeFeishuBinding(id);confirmRevoke.value='';message.value='绑定已撤销，该成员原有会话已失效。';await load();}catch{error.value='撤销失败，请刷新后重试。';}finally{busy.value='';}}
+onMounted(load);
+</script>
+<template>
+ <section class="card admission-panel" aria-labelledby="binding-title" :aria-busy="loading||!!busy">
+  <header class="section-heading"><div><h2 id="binding-title">飞书身份绑定管理</h2><p>查看及撤销已有绑定，保留成员原有部门和权限。</p></div><span class="total">{{bindings.length}} 条绑定</span></header>
+  <p v-if="error" class="notice notice-error" role="alert">{{error}} <button class="btn" :disabled="loading||!!busy" @click="load">重试</button></p>
+  <p v-if="message" class="notice notice-success" role="status">{{message}}</p>
+  <div class="binding-toolbar"><div class="binding-filters"><label><span>搜索绑定</span><input v-model="keyword" type="search" placeholder="搜索成员或身份标识" :disabled="!!busy"></label><label><span>绑定状态</span><select v-model="statusFilter" :disabled="!!busy"><option value="all">全部状态</option><option value="approved">已批准</option><option value="revoked">未批准 / 已撤销</option></select></label></div><button class="btn" :disabled="loading||!!busy" @click="load">{{loading?'正在刷新…':'刷新绑定'}}</button></div>
+  <p v-if="loading" class="panel-state" role="status">正在读取绑定信息…</p>
+  <div v-else-if="!error||bindings.length" class="table-wrap"><table class="table bindings-table"><colgroup><col class="member-col"><col class="identity-col"><col class="status-col"><col class="action-col"></colgroup><thead><tr><th scope="col">成员</th><th scope="col">飞书身份</th><th scope="col">状态</th><th scope="col">操作</th></tr></thead><tbody>
+   <template v-for="binding in filtered" :key="binding.id"><tr><td><strong>{{binding.display_name}}</strong></td><td><span class="identity-label">租户</span><span class="identity-value">{{binding.tenant_key}}</span><span class="identity-label">身份标识</span><span class="identity-value">{{binding.external_id}}</span></td><td><span class="binding-status" :class="binding.approved?'approved':'inactive'">{{binding.approved?'已批准':'未批准 / 已撤销'}}</span><small class="account-state">{{accountLabels[binding.user_status]??'账号状态待核实'}}</small></td><td><button v-if="binding.approved" class="btn btn-danger" :disabled="!!busy" :aria-expanded="confirmRevoke===binding.id" :aria-controls="'revoke-panel-'+binding.id" @click="requestRevoke(binding.id)">撤销绑定</button><span v-else class="muted">—</span></td></tr>
+   <tr v-if="confirmRevoke===binding.id" class="confirmation-row"><td colspan="4"><div :id="'revoke-panel-'+binding.id" class="revoke-confirmation" role="alertdialog" aria-modal="false" :aria-labelledby="'revoke-title-'+binding.id"><div><strong :id="'revoke-title-'+binding.id">撤销 {{binding.display_name}} 的飞书绑定？</strong><p>该成员现有会话将立即失效，需要重新关联后才能使用飞书登录。</p></div><div class="confirmation-actions"><button class="btn" :disabled="!!busy" @click="confirmRevoke=''">取消</button><button :id="'confirm-revoke-'+binding.id" class="btn btn-danger" :disabled="!!busy" @click="revoke(binding.id)">{{busy===binding.id?'正在撤销…':'确认撤销'}}</button></div></div></td></tr></template>
+   <tr v-if="!filtered.length"><td colspan="4" class="panel-state">{{bindings.length?'没有符合筛选条件的绑定，请调整筛选。':'暂无飞书绑定，可通过上方批量预绑定功能核实并关联成员。'}}</td></tr>
+  </tbody></table></div>
+ </section>
+</template>
+<style scoped>
+.admission-panel{min-width:0}.section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.section-heading p{margin:8px 0 0;color:var(--lark-text-2);font-size:13px;line-height:21px}.total{flex:none;color:var(--lark-text-3);font-size:12px;padding-top:4px}.binding-toolbar{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;margin:20px 0 16px}.binding-filters{display:flex;gap:12px;flex-wrap:wrap}.binding-filters label{display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--lark-text-2)}.binding-filters input{width:240px;max-width:100%}.binding-filters select{min-width:150px}.bindings-table{width:100%;table-layout:fixed;min-width:620px}.member-col{width:15%}.identity-col{width:43%}.status-col{width:24%}.action-col{width:18%}.bindings-table td{vertical-align:middle;white-space:normal;overflow-wrap:anywhere}.identity-label{display:inline-block;font-size:11px;color:var(--lark-text-3);min-width:56px}.identity-value{font-size:12px;color:var(--lark-text-2);overflow-wrap:anywhere}.identity-value:after{content:'';display:block;height:3px}.account-state{display:block;color:var(--lark-text-3);font-size:12px;margin-top:5px}.binding-status{display:inline-flex;padding:2px 8px;border-radius:4px;font-size:12px;line-height:20px}.approved{background:#edf8f2;color:#238263}.inactive{background:#f1f3f6;color:#748196}.muted{color:var(--lark-text-3)}.panel-state{text-align:center;color:var(--lark-text-3);padding:26px 14px!important;font-size:13px;line-height:22px}.confirmation-row td{padding:12px 14px!important;background:#fffaf9}.revoke-confirmation{display:flex;align-items:center;justify-content:space-between;gap:18px;white-space:normal}.revoke-confirmation strong{color:#9f3027;font-size:13px}.revoke-confirmation p{font-size:12px;color:#8b6b65;margin:5px 0 0;line-height:20px}.confirmation-actions{display:flex;gap:8px;flex:none}@media(max-width:760px){.binding-toolbar{align-items:flex-end}.binding-toolbar>.btn{align-self:flex-end;flex:none}.binding-filters{flex:1}.binding-filters label{flex:1;min-width:140px}.binding-filters input{width:100%}.revoke-confirmation{align-items:flex-start;flex-direction:column}.section-heading{gap:8px}}
+</style>

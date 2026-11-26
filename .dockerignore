@@ -1,0 +1,34 @@
+# 构建镜像时排除的内容（不进入 build context，也不进镜像）
+.git
+.gitignore
+**/node_modules
+**/dist
+**/*.log
+
+# 绝不把本地环境文件打进镜像：运行时用 compose 注入环境变量
+.env
+.env.*
+!.env.example
+
+# 本地部署不需要的文档与产物
+docs
+*.md
+db
+tests
+scripts/*
+!scripts/test-db-safety.cjs
+!scripts/test-db-setup.cjs
+!scripts/test-db-verify.mjs
+!scripts/test-db-safety.test.cjs
+**/.env
+**/.env.*
+!**/.env.example
+**/cloud.env
+tmp
+
+# Windows / 编辑器噪音
+**/.DS_Store
+**/Thumbs.db
+
+# Isolated local test fixtures and screenshots are never application assets.
+.local

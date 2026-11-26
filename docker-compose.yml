@@ -1,0 +1,112 @@
+# 本地 Docker 一键部署：postgres + migrate（一次性）+ api + worker + web(nginx)
+#
+# 用法：
+#   pnpm docker:up       # 构建并启动全部服务（首次会拉取镜像、跑迁移与种子）
+#   pnpm docker:logs     # 跟踪日志
+#   pnpm docker:down     # 停止（保留数据库卷）
+#   pnpm docker:reset    # 停止并清空数据库卷（回到干净状态）
+#
+# 访问： http://localhost:5373  （前端；/api 由 nginx 反代到 api:3000）
+# 说明：变量统一用 DOCKER_ 前缀，避免与仓库根的 .env 在 compose 插值时互相干扰。
+name: review360-open
+
+x-app-build: &app-build
+  context: .
+  dockerfile: Dockerfile
+
+# 三个应用进程共享的环境变量
+x-app-env: &app-env
+  APP_ENV: ${DOCKER_APP_ENV:-development}
+  # 必须等于「浏览器访问前端的地址」，否则写操作会被后端 Origin 校验拒绝
+  APP_ORIGIN: ${DOCKER_APP_ORIGIN:-http://localhost:5373}
+  ORG_TIMEZONE: ${DOCKER_ORG_TIMEZONE:-Asia/Shanghai}
+  # 本地演示需要身份切换；注意 APP_ENV=production 时该项必须为 false，否则服务拒绝启动
+  DEMO_LOGIN_ENABLED: ${DOCKER_DEMO_LOGIN_ENABLED:-false}
+  DATABASE_URL: postgres://review360:review360_dev@postgres:5432/review360
+  SESSION_SECRET: ${DOCKER_SESSION_SECRET:?Set DOCKER_SESSION_SECRET in .env}
+  INITIAL_SETUP_TOKEN: ${INITIAL_SETUP_TOKEN:-}
+  INITIAL_ORG_NAME: ${INITIAL_ORG_NAME:-}
+  INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-}
+  WORKER_POLL_MS: ${DOCKER_WORKER_POLL_MS:-5000}
+  FEISHU_APP_ID: ${DOCKER_FEISHU_APP_ID:-}
+  FEISHU_APP_SECRET: ${DOCKER_FEISHU_APP_SECRET:-}
+  FEISHU_REDIRECT_URI: ${DOCKER_FEISHU_REDIRECT_URI:-http://localhost:5373/api/v1/auth/feishu/callback}
+  FEISHU_TENANT_KEY: ${DOCKER_FEISHU_TENANT_KEY:-}
+  FEISHU_ORG_ID: ${DOCKER_FEISHU_ORG_ID:-}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: review360
+      POSTGRES_PASSWORD: review360_dev
+      POSTGRES_DB: review360
+    ports:
+      - "127.0.0.1:${DOCKER_PG_PORT:-56432}:5432"
+    volumes:
+      - review360-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U review360 -d review360"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # 一次性任务：迁移、组织初始化与默认规则集
+  migrate:
+    build: *app-build
+    image: review360-open-app:local
+    command: ["sh", "-lc", "pnpm --filter @360/database migrate && pnpm --filter @360/database seed"]
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: *app-build
+    image: review360-open-app:local
+    command: ["node", "apps/api/dist/main.js"]
+    environment:
+      <<: *app-env
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:${DOCKER_API_PORT:-3200}:3000"
+    volumes:
+      - review360-report-storage:/app/storage/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/v1/health/ready >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  worker:
+    build: *app-build
+    image: review360-open-app:local
+    command: ["node", "apps/worker/dist/main.js"]
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: review360-open-web:local
+    ports:
+      - "127.0.0.1:${DOCKER_WEB_PORT:-5373}:80"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  review360-pgdata:
+  review360-report-storage:

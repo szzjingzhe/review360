@@ -1,0 +1,9 @@
+import {afterEach,describe,it,expect,vi} from 'vitest';
+import {memberFeedbackApi} from '../src/api/memberFeedback';
+afterEach(()=>{vi.unstubAllGlobals();vi.useRealTimers();});
+describe('member feedback existing endpoints',()=>{
+ it('sends metadata only inside reason to the selected publication using same-origin API',async()=>{const fetcher=vi.fn().mockResolvedValue({ok:true,json:async()=>({data:{id:'request',status:'PENDING'}})});vi.stubGlobal('fetch',fetcher);await memberFeedbackApi.create('pub-id','【申诉类型】评价结果异议\n【涉及范围】整体评价结果\n\n依据');const [url,options]=fetcher.mock.calls[0];expect(url).toBe('/api/v1/published-results/pub-id/feedback-requests');expect(options.method).toBe('POST');expect(options.credentials).toBe('include');expect(Object.keys(JSON.parse(options.body))).toEqual(['reason']);});
+ it('reads only own records and preserves missing processing information',async()=>{const fetcher=vi.fn().mockResolvedValue({ok:true,json:async()=>({data:[{id:'f',cycle_id:'c',status:'DONE',reason:'理由'}]})});vi.stubGlobal('fetch',fetcher);const rows=await memberFeedbackApi.list();expect(fetcher.mock.calls[0][0]).toBe('/api/v1/feedback-requests/mine');expect(rows[0].handlerNote).toBe('');expect(rows[0].handledAt).toBe('');});
+ it('surfaces backend ownership failures without converting them into empty success',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue({ok:false,json:async()=>({code:'NOT_OWN_RESULT'})}));await expect(memberFeedbackApi.create('p','理由')).rejects.toThrow('NOT_OWN_RESULT');});
+ it('aborts timed-out requests instead of leaving the form busy forever',async()=>{vi.useFakeTimers();vi.stubGlobal('fetch',vi.fn((_url,options)=>new Promise((_resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('aborted'))))));const result=expect(memberFeedbackApi.list()).rejects.toThrow('REQUEST_TIMEOUT');await vi.advanceTimersByTimeAsync(20000);await result;});
+});
